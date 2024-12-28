@@ -74,7 +74,7 @@ Ensure you have the following installed:
 
 # Demo Video
 
-[Watch the demo video](assets/stri-assignment-demo.mp4)
+[Watch the demo video]([assets/stri-assignment-demo.mp4](https://drive.google.com/file/d/1PilJcs9iVEmEHZYnm4szigYVQi1Xjmi0/view?usp=sharing))
 
 # References
 
