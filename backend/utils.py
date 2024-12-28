@@ -56,7 +56,6 @@ def convert_objectid_to_str(obj):
 
 
 def create_proxy_auth_extension(proxy_host, proxy_port, proxy_username, proxy_password):
-    # Manifest file defining the Chrome extension
     manifest_json = """
     {
         "version": "1.0.0",
@@ -76,8 +75,6 @@ def create_proxy_auth_extension(proxy_host, proxy_port, proxy_username, proxy_pa
         }
     }
     """
-
-    # Background script that configures proxy and handles authentication
     background_js = f"""
     var config = {{
         mode: "fixed_servers",
@@ -108,7 +105,6 @@ def create_proxy_auth_extension(proxy_host, proxy_port, proxy_username, proxy_pa
     );
     """
 
-    # Create a zip file containing the manifest and background script
     with zipfile.ZipFile("proxy_auth_extension.zip", "w") as zp:
         zp.writestr("manifest.json", manifest_json)
         zp.writestr("background.js", background_js)

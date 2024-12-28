@@ -1,5 +1,6 @@
 import logging
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -57,6 +58,13 @@ except Exception as e:
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")
@@ -66,12 +74,11 @@ def hello_world():
 
 @app.get("/api/scrape")
 def scrape():
-    logger.debug(f"Checking if path exists: {chrome_driver_path}")
     if not os.path.exists(chrome_driver_path):
-        logger.error(f"Path does not exist: {chrome_driver_path}")
+        # logger.error(f"Path does not exist: {chrome_driver_path}")
         return {"message": "Chrome driver path is not valid"}
 
-    logger.info(f"Using CHROME_DRIVER_PATH: {chrome_driver_path}")
+    # logger.info(f"Using CHROME_DRIVER_PATH: {chrome_driver_path}")
 
     PROXY = random.choice(proxies)
     create_proxy_auth_extension(
@@ -79,7 +86,7 @@ def scrape():
     )
     logger.info(f"Using PROXY: {PROXY}")
     options = Options()
-    # options.add_argument("--headless")
+    options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_extension("proxy_auth_extension.zip")
@@ -111,7 +118,7 @@ def scrape():
             username_field.send_keys(twitter_email)
             username_field.send_keys(Keys.RETURN)
         except Exception:
-            print("Email field not found, continuing anyway.")
+            print("Email verification not asked, continuing.")
 
         WebDriverWait(driver, 30).until(
             EC.presence_of_element_located((By.NAME, "password"))
@@ -129,7 +136,7 @@ def scrape():
             username_field.send_keys(twitter_email)
             username_field.send_keys(Keys.RETURN)
         except Exception:
-            print("Email field not found, continuing anyway.")
+            print("Email verification not asked, continuing.")
 
         WebDriverWait(driver, 30).until(EC.url_contains("home"))
 
@@ -151,27 +158,28 @@ def scrape():
                     trend_parts = trend_text.split("\n")
                     return trend_parts[1] if len(trend_parts) > 1 else trend_parts[0]
 
-                trends = {
-                    f"nameOfTrend{i+1}": get_second_element_or_first(trend.text)
-                    for i, trend in enumerate(trend_elements)
-                }
-
-                for k, v in trends.items():
-                    logger.info(f"{k}: {v}")
+                trend_names = [
+                    get_second_element_or_first(trend.text) for trend in trend_elements
+                ]
 
                 end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                ip_address = PROXY["address"] + ":" + str(PROXY["port"])
-
+                ip_address = f"{PROXY['address']}:{PROXY['port']}"
                 result = {
-                    **trends,
+                    "trends": trend_names,
                     "date_time_of_end": end_time,
                     "ip_address": ip_address,
                 }
 
-                trend_model = Trend(_id=ObjectId(), **result)
+                trend_model = Trend(
+                    _id=ObjectId(),
+                    trends=result["trends"],
+                    date_time_of_end=datetime.strptime(
+                        result["date_time_of_end"], "%Y-%m-%d %H:%M:%S"
+                    ),
+                    ip_address=result["ip_address"],
+                )
 
-                trend_dict = trend_model.dict(by_alias=True)
-                res = trends_collection.insert_one(trend_dict)
+                res = trends_collection.insert_one(trend_model.dict(by_alias=True))
 
                 result["_id"] = str(res.inserted_id)
 
