@@ -19,7 +19,6 @@ export default function Home() {
     setError(null);
     try {
       const res = await axios.get("http://localhost:3001/api/scrape");
-      console.log(res.data);
       setData(res.data);
     } catch (err) {
       setError("Failed to fetch data. Please try again.");
